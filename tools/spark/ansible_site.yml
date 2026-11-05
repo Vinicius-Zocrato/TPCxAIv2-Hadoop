@@ -1,0 +1,130 @@
+- name: Configure TPCx-AI
+  hosts: all
+  vars:
+    FILE_ROOT: /tmp
+    ANACONDA_VER: 2022.05
+    ANACONDA_FILE: "Anaconda3-{{ ANACONDA_VER }}-Linux-x86_64.sh"
+    ANACONDA_URL: "https://repo.anaconda.com/archive/{{ ANACONDA_FILE }}"
+    ANACONDA_MD5: md5:a01150aff48fcb6fcd6472381652de04
+    ANACONDA_ROOT: /opt/anaconda3
+    USE_SPARK3: "{{ (spark_version | mandatory).startswith('3') }}"
+    OPENMPI_VER: 4.1.0
+    OPENMPI_FILE: "openmpi-{{ OPENMPI_VER }}.tar.gz"
+    OPENMPI_URL: "https://download.open-mpi.org/release/open-mpi/v{{ OPENMPI_VER[:3] }}/{{ OPENMPI_FILE }}"
+    OPENMPI_MD5: md5:45d272a0541857a40d1808e86833bc15
+    OPENMPI_ROOT: "{{ FILE_ROOT }}/openmpi-{{ OPENMPI_VER }}"
+    PYTHON_VER: "{{ USE_SPARK3 | ternary('3.8', '3.7') }}"
+    SETUPTOOLS_VER: "{{ USE_SPARK3 | ternary('65', '59') }}"
+    CONDA_ENV: adabench_dl
+    CONDA_ENV_ROOT: /usr/envs
+    CONDA_ENV_FILE: "{{ USE_SPARK3 | ternary('build_dl-spark3.yml', 'build_dl.yml') }}"
+    CONDA_ENV_PREFIX: "{{ CONDA_ENV_ROOT }}/{{ CONDA_ENV }}"
+  environment:
+    HTTP_PROXY: "{{ lookup('env','http_proxy') or lookup('env','HTTP_PROXY') }}"
+    HTTPS_PROXY: "{{ lookup('env','https_proxy') or lookup('env','HTTPS_PROXY') }}"
+    NO_PROXY: "{{ lookup('env','no_proxy') or lookup('env','NO_PROXY') }}"
+  tasks:
+
+    - name: install debian packages
+      package:
+        name:
+          - build-essential
+          - libgl-dev
+          - libglvnd0
+          - libsndfile1-dev
+          - libsndfile1
+          - libxxf86vm-dev
+          - libxxf86vm1
+          - pssh
+      become: yes
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: install redhat packages
+      package:
+        name:
+          - devtoolset-9
+          - mesa-libGL-devel
+          - libglvnd-glx
+          - libsndfile-devel
+          - libsndfile
+          - libXxf86vm-devel
+          - libXxf86vm
+          - pssh
+      become: yes
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: download anaconda
+      get_url:
+        url: "{{ ANACONDA_URL }}"
+        dest: "{{ FILE_ROOT }}/{{ ANACONDA_FILE }}"
+        checksum: "{{ ANACONDA_MD5 }}"
+
+    - name: install anaconda
+      shell: "bash {{ FILE_ROOT }}/{{ ANACONDA_FILE }} -b -p {{ ANACONDA_ROOT }}"
+      args:
+        creates: "{{ ANACONDA_ROOT }}"
+      become: yes
+
+    - name: init anaconda
+      shell: "{{ ANACONDA_ROOT }}/bin/conda init bash"
+
+    - name: deactivate anaconda auto base
+      shell: "{{ ANACONDA_ROOT }}/bin/conda config --set auto_activate_base false"
+      args:
+        creates: "~/.condarc"
+
+    - name: download openmpi
+      get_url:
+        url: "{{ OPENMPI_URL }}"
+        dest: "{{ FILE_ROOT }}/{{ OPENMPI_FILE }}"
+        checksum: "{{ OPENMPI_MD5 }}"
+
+    - name: extract openmpi archive
+      unarchive:
+        src: "{{ FILE_ROOT }}/{{ OPENMPI_FILE }}"
+        dest: "{{ FILE_ROOT }}"
+        creates: "{{ OPENMPI_ROOT }}"
+        remote_src: True
+
+    - name: build openmpi
+      shell: "./configure; make -j {{ ansible_processor_cores }}"
+      args:
+        chdir: "{{ OPENMPI_ROOT }}"
+        creates: "{{ OPENMPI_ROOT }}/Makefile"
+
+    - name: install openmpi
+      shell: "make install; ldconfig"
+      args:
+        chdir: "{{ OPENMPI_ROOT }}"
+        creates: /usr/local/lib/openmpi
+      become: yes
+
+    - name: create conda env root
+      file:
+        path: "{{ CONDA_ENV_ROOT }}"
+        state: directory
+        mode: '0777'
+      become: yes
+
+    - name: distribute conda env file
+      copy:
+        src: "{{ CONDA_ENV_FILE }}"
+        dest: "{{ CONDA_ENV_ROOT }}/{{ CONDA_ENV_FILE }}"
+
+    - name: create anaconda virtual environment
+      shell: "{{ ANACONDA_ROOT }}/bin/conda create -y -p {{ CONDA_ENV_PREFIX }} -c conda-forge python={{ PYTHON_VER }} gcc_linux-64=10 gxx_linux-64=10 cmake=3 openmpi-mpicc=4 setuptools={{ SETUPTOOLS_VER }}"
+      args:
+        creates: "{{ CONDA_ENV_PREFIX }}"
+
+    - name: install tpcx-ai dependencies
+      shell: "{{ ANACONDA_ROOT }}/bin/conda env update -p {{CONDA_ENV_PREFIX }} -f {{ CONDA_ENV_ROOT }}/{{ CONDA_ENV_FILE }}"
+      args:
+        creates: "{{ CONDA_ENV_PREFIX }}/lib/python{{ PYTHON_VER }}/site-packages/pyarrow"
+      environment:
+        PIP_NO_CACHE_DIR: 1
+        HOROVOD_WITH_TENSORFLOW: 1
+        HOROVOD_WITH_MPI: 1
+        HOROVOD_CPU_OPERATIONS: "MPI"
+        HOROVOD_WITHOUT_GLOO: 1
+        HOROVOD_WITHOUT_PYTORCH: 1
+        HOROVOD_WITHOUT_MXNET: 1

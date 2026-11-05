@@ -1,0 +1,60 @@
+# Python-generated files
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Environments created by setup scripts
+/lib/python-venv/
+/lib/python-venv-ks/
+/TPCx-AI_v2.0.0.pdf
+# Generated benchmark data and run results
+/output/*
+/logs/*
+!/output/.gitkeep
+!/logs/.gitkeep
+
+# Local Spark cluster configuration
+/nodes
+
+# Common OS metadata
+.DS_Store
+
+# Large vendor binaries (GitHub rejects files >100 MB). Peers get them from the
+# official TPCx-AI v2.0.0 download; see README
+*.jar
+*.h5
+*.bin
+/data-gen/dicts/tpcxai/models/
+
+# Generated datasets (reproducible from scale factor + seed in setenv.sh)
+*.csv
+*.parquet
+*.orc
+*.seq
+*.tbl
+*.wav
+*.png
+*.jpg
+/data-gen/output/
+/data/
+
+# Hadoop / HDFS local state
+/hdfs/
+/hadoop-data/
+/dfs/
+/tmp/
+*.crc
+*.pid
+*.log
+
+# Spark / Hadoop scratch
+metastore_db/
+derby.log
+spark-warehouse/
+spark-events/
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+Thumbs.db

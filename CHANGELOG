@@ -1,0 +1,30 @@
+v2.0
+- Reflects changes in the software solution offered in a single node configuration.
+
+v1.0.3.1
+- Updates python-ks.yaml
+
+v1.0.3
+- Adds high level wrapper Full_TPCx-AI_Benchmarkrun.sh to run TPCx-AI_Benchmarkrun.sh immediately after TPCx-AI_Validation.sh
+- Adds support for Spark3
+- Adds support for Horovod v0.20+
+- Normalize naming of training model output directory
+- Sets prediction outputs to output directory (previously predictions were stored in the model directory)
+- Enables verbosity in setenv.sh 
+- Minor adjustments to metric computation and standardizes rounding of metric computation
+- optional sleep-between-jobs parameter added for Spark UC2 and UC9
+- Updates Conda environment definition files for python-venv and python-venv-ks
+- Enables XGBoost Scala tracker usage (previously only the python tracker could be used)
+- Updates README.md 
+
+
+v1.0.2
+- Adds the CHECK_INTEGRITY phase to the benchmark run script.
+- VERIFICATION phase is integrated in the SCORING phase
+- Reports number of files changed but allows the benchmark run to continue
+- Removes dependency on pycryptodome
+- Sets output directory for redundancy report to the logs/ directory
+
+v1.0.1
+- Upgrades PDGF to a newer version
+- Creates two virtual environments for python execution
