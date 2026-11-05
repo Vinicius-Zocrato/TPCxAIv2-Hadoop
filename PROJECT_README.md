@@ -1,6 +1,6 @@
 # Big Data Project: TPCx-AI on Hadoop
 
-Course project (Yonsei, Big Data). This milestone: generate the TPCx-AI data,
+Course project (Yonsei, Big Data). Objective: generate the TPCx-AI data,
 store it in our file system (HDFS), and query it on demand. We mainly run
 **use case 1** (and another one if relevant).
 
@@ -47,24 +47,12 @@ git checkout -f main        # takes our versions of tracked files; ignored binar
 (our edited scripts/configs). Untracked and ignored files, which include the big
 binaries you just downloaded, are left alone.
 
-**Whoever creates the repo first (one person only):**
-
-```bash
-cd tpcx-ai-v2.0.0
-git init -b main
-git add -A                  # .gitignore keeps binaries and data out
-git status --short          # sanity check: should be ~136 files, ~30 MB
-git commit -m "Initial import of TPCx-AI kit sources"
-git remote add origin <REPO_URL>
-git push -u origin main
-```
-
 Never `git add -f` a file matched by `.gitignore`. Before pushing, check that
 `du -sh .git` is small (a few MB).
 
 ## 3. Prerequisites
 
-- Java 8, Python 3.6+ (3.9 tested), `conda`, `sbt` on the `PATH` (see kit `README.md`)
+- Java 17, Python 3.6+ (3.9 tested), `conda`, `sbt` on the `PATH` (see kit `README.md`)
 - Hadoop (HDFS) running locally or on the cluster
 - Run `./setup-python.sh` (single node) or `./setup-spark.sh` (Spark) once
 
